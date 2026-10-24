@@ -57,6 +57,9 @@ test-results/
 # The journal database is personal data; keep it out of Git.
 # ---------------------------------------------------------------
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 /exports/

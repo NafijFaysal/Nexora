@@ -10,6 +10,8 @@ Status: **proposed**. Nothing here has been built or run yet. Choices marked "co
 - Works fully offline on one laptop (the most dependable setup for a live demo).
 - AI is optional and cannot affect correctness of results.
 
+Toolchain as reported by the project owner (not independently checked): Python 3.13.14, Node.js 24.22.1, npm 11.19.1, Git 2.56.0, on Windows with VS Code. Phase 1 confirms these on the real machine, and library versions are chosen to match them.
+
 ## 2. Overview
 
 Two small programs on one machine, plus a SQLite file.
@@ -42,7 +44,7 @@ Created incrementally, not all at once.
 ```
 WhatIf2.0/
   PROJECT_GUIDE.md
-  README.md                  (later: how to install and run)
+  README.md                  (started in Phase 1; how to install and run)
   .gitignore
   .env.example
   docs/
@@ -50,6 +52,7 @@ WhatIf2.0/
     TESTING.md
     progress.md
   backend/
+    pyproject.toml           pytest and ruff settings
     requirements.txt
     requirements-dev.txt
     app/
@@ -116,7 +119,7 @@ JSON and CSV exports are produced in the browser from the data already on screen
 
 - `options`: list of names.
 - `criteria`: each has a name, a direction (`benefit` or `cost`), a raw importance weight, and an optional unit.
-- `values`: one number per option per criterion. Missing values are rejected in the first version.
+- `values`: one number per option per criterion. Qualitative factors are entered as numeric ratings on a user-chosen scale. Missing values are rejected in the first version.
 - `constraints`: each refers to one criterion with `<=` or `>=` and a threshold on the raw value.
 - `scenarios` (later): named overrides of weights.
 - `schema_version`: so saved decisions can be migrated when the model changes.
@@ -132,9 +135,18 @@ JSON and CSV exports are produced in the browser from the data already on screen
 - **Constraints:** an option violating any constraint is marked ineligible, with the violated rule recorded. Ineligible options are shown but not ranked.
 - **Ranking:** descending score. Scores within a small tolerance (proposed `1e-9`) are treated as a tie and share a rank. Ties are flagged in the result.
 - **Contribution breakdown:** `weight_i * normalized_value_i` per option per criterion. These sum exactly to the score, which is what makes the charts honest.
-- **One-at-a-time sensitivity:** vary one criterion's weight from 0 to 1 while rescaling the other weights in proportion. Because each score is a linear function of that one weight, switching points between two options can be solved exactly instead of estimated by trial.
-- **Rank stability simulation:** repeatedly perturb every weight by a random factor within a user-chosen percentage (for example plus or minus 25%), renormalize, rerank, and count how often each option ranks first. Uses a recorded seed so a run can be reproduced. This reports the share of *simulated weightings*, not a probability that the user is "right".
+- **One-at-a-time sensitivity:** vary one criterion's weight from 0 to 1 while rescaling the other weights in proportion. Because each score is a linear function of that one weight, switching points between two options can be solved exactly instead of estimated by trial. If every other weight is zero there is nothing to rescale, so that criterion's sweep is reported as not defined rather than guessed.
+- **Rank stability simulation:** repeatedly perturb every weight by a random factor within a user-chosen percentage (for example plus or minus 25%), renormalize, rerank, and count how often each option ranks first. Uses a recorded seed so a run can be reproduced. When several options tie for first in one run, they split that run's credit equally, so shares always sum to 100%. This reports the share of *simulated weightings*, not a probability that the user is "right".
 - **Explanations:** produced from templates filled with the real numbers (for example the largest contributing criteria, the margin over the runner-up, the nearest switching point). No AI text in this path.
+
+### Known limitations
+
+These belong in the product's own wording as well as here.
+
+- **Scores are relative.** Min-max results depend on which options were entered. Adding or removing an option can change scores and, in some cases, the order of the remaining options (rank reversal). A score of 0.6 is not an absolute rating.
+- **Outliers compress the rest.** One extreme value on a criterion squeezes the normalized values of all other options toward each other.
+- **Linear trade-offs.** Weighted sum assumes that more of a benefit is always proportionally better and that criteria can be traded off against each other. Criteria with a best value in the middle are not supported in the first version.
+- **Weights are judgments.** Sensitivity analysis shows how much the weights matter. It cannot say whether they are right.
 
 ## 6. API sketch (proposed)
 
@@ -155,10 +167,11 @@ FastAPI also generates interactive API docs, which are handy for manual testing 
 
 ## 7. Storage
 
-- **SQLite** through SQLAlchemy (confirm at scaffolding). One file, no server, no cost.
+- **SQLite** through Python's built-in `sqlite3` module with parameterized queries (confirm at Phase 9). One file, no server, no cost, and no extra dependency. There is a single table, so an ORM such as SQLAlchemy is not justified unless the schema grows.
 - A `decisions` table holds: id, title, created and updated times, the decision model as a JSON text column, a result snapshot as JSON, chosen option, reasoning, review outcome, review notes, review time.
 - Storing the model as JSON keeps the schema small and flexible. The trade-off is that you cannot query inside it, so search covers title and notes only.
 - Database creation is automatic on first run, and the file is excluded from Git.
+- The database path is resolved relative to the backend folder, not the terminal's current folder, so the file does not end up in different places depending on where the server was started.
 
 ## 8. Proposed limits (enforced by the backend)
 
@@ -167,8 +180,10 @@ Initial values, adjustable after testing:
 - Options per decision: at most 20
 - Criteria per decision: at most 15
 - Names: at most 100 characters; free-text notes: at most 2,000 characters
-- Numeric values: finite numbers only (no NaN or infinity)
-- Request body: about 256 KB
+- Numeric values: finite numbers only (no NaN or infinity), with absolute value at most 1e12 to avoid overflow and precision loss
+- Raw weights: between 0 and 1,000
+- Simulation runs: at most 10,000 (default 1,000). Weight sweep steps: at most 200
+- Request body: about 256 KB. Uvicorn does not enforce a body size by default. The field limits above bound the size in practice, and a small size check is added in Phase 4 if testing shows it is needed.
 - AI input: `AI_MAX_INPUT_CHARS` (default 4,000)
 
 ## 9. Frontend notes (confirm at scaffolding)
@@ -177,6 +192,7 @@ Initial values, adjustable after testing:
 - State in plain React state and context. No heavy state library.
 - Charts with Recharts. Styling with Tailwind CSS, which the Next.js setup offers as an option.
 - A thin API client in `lib/api.ts`. Response types are written by hand at first.
+- Browser-to-API calls: either direct calls (needs CORS configured) or a Next.js rewrite that forwards `/api/*` to the backend (same origin, avoids most CORS problems). Decide in Phase 5.
 - Guided input in steps (options, criteria and weights, values, limits), since a wizard is easier for first-time users than one large form.
 
 ## 10. Trade-offs and alternatives considered
@@ -186,8 +202,8 @@ Initial values, adjustable after testing:
 | Languages | Python backend, TypeScript frontend | Everything in TypeScript | The brief names both stacks, and a Python engine is easy to unit test. Cost: two runtimes, two sets of tools, more to learn. A TypeScript-only app would be simpler to deploy. Keeping the engine free of web code makes a later port feasible. |
 | Where math runs | Backend only | Duplicate in browser | One source of truth for numbers. Cost: the UI needs the backend running, even for simple analysis. |
 | Scoring method | Weighted sum first | TOPSIS, AHP, outranking methods | Easiest to explain to a first-time user. Cost: assumes criteria trade off linearly. More methods can be added after the first is solid. |
-| Normalization | Min-max over all entered options | Over eligible options only | Scores do not shift when a constraint is toggled. Cost: results depend on which options were entered. Revisit after seeing real examples. |
-| Database | SQLite | PostgreSQL or a hosted service | Zero cost and zero setup. Cost: not suited to many simultaneous users. |
+| Normalization | Open (decision 3): min-max over all entered options, or over eligible options only | The other one | Over all options: scores do not shift when a constraint is toggled, but a ruled-out option still stretches the scale. Over eligible options: a ruled-out option behaves as if it was never entered, which is easier to explain, but scores change when a constraint is toggled. Decide before Phase 3. |
+| Database | SQLite via built-in `sqlite3` | PostgreSQL, a hosted service, or SQLite with an ORM | Zero cost, zero setup, no extra dependency. Cost: not suited to many simultaneous users, and hand-written queries need care (parameters only). |
 | Accounts | None in v1 | Login system | Large security and maintenance burden for a demo. Cost: no public multi-user hosting (see open decisions). |
 | Explanations | Templated from numbers | AI-written | Reproducible, testable, free. Cost: less fluent prose. |
 | AI | Optional, off by default | Core feature | The product must be correct and usable without it. Also avoids a paid dependency. |
@@ -199,10 +215,11 @@ Initial values, adjustable after testing:
 
 1. **Public hosting and storage.** If the app is ever hosted for many people, how is the journal kept private? Options include per-browser storage, accounts, or no journal on the public version.
 2. **Project path.** Keep `E:\apps and codes j\WhatIf2.0` (spaces in the path) or move to a path without spaces if tools misbehave.
-3. **Normalization scope.** Confirm "all entered options" after seeing results on real examples.
+3. **Normalization scope (decide before Phase 3).** Normalize over all entered options, or only over options that pass the constraints? The expected numbers in `docs/TESTING.md` section 3 depend on the answer. Current lean: eligible options only, because a ruled-out option then behaves as if it was never entered.
 4. **Styling.** Confirm Tailwind versus plain CSS at frontend scaffolding.
 5. **AI in the demo.** Whether to include AI parsing at all, which provider, and who pays for API usage. API usage is billed separately from a Claude chat plan; check current pricing before deciding.
 6. **Tie tolerance and simulation defaults.** Settle after testing.
+7. **Repository visibility and license.** Whether the repository will be public (for example on GitHub). This affects the license choice and how carefully secrets and personal data must be kept out of the history.
 
 ## 12. Demo considerations (Science Fest)
 
@@ -211,3 +228,5 @@ Initial values, adjustable after testing:
 - Use a fixed simulation seed so the demo shows repeatable results.
 - Keep a JSON export of the demo decisions as a restore point.
 - Leave AI parsing off unless it has been tested with a working key and a graceful failure message.
+- Visitors may type real personal decisions. Use a separate demo database that is reset between visitors, ask visitors not to enter personal details, and never demo from your own journal.
+- Start the backend bound to `127.0.0.1` so other devices on the venue network cannot reach it.

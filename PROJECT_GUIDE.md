@@ -55,7 +55,7 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 
 ### Core analysis
 
-- **Decision model:** options, criteria, weights, and numeric values for each option on each criterion.
+- **Decision model:** options, criteria, weights, and numeric values for each option on each criterion. Qualitative factors (for example "comfort") are entered as numeric ratings on a scale the user chooses, such as 1 to 10, and the interface explains this.
 - **Criterion direction:** each criterion is either "higher is better" (benefit) or "lower is better" (cost).
 - **Scoring:** weighted-sum model with min-max normalization (first method). Further methods (for example TOPSIS) may be added later behind a clear explanation of how they differ.
 - **Constraints:** hard limits that mark an option as not allowed (for example "price must be at most 900"), with the reason shown for each excluded option.
@@ -70,7 +70,7 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 
 ### Scenario and sensitivity analysis
 
-- **Scenarios:** named sets of weights or values (for example "budget-focused" and "quality-focused") compared side by side.
+- **Scenarios:** named sets of weights (for example "budget-focused" and "quality-focused") compared side by side. Overriding option values per scenario is not planned for the first version.
 - **One-at-a-time sensitivity:** sweep one weight while rescaling the others, and chart the scores.
 - **Switching points:** the weight value at which the top-ranked option changes.
 - **Rank stability:** repeatedly sample plausible weights (seeded) and report how often each option ranks first.
@@ -98,9 +98,18 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 - CSV export of scores and rankings.
 - A printable report page (the browser's "Save as PDF" covers PDF output, so no PDF library is needed at first).
 
+### Non-functional requirements
+
+- **Browsers:** current desktop Chrome, Edge, and Firefox. The layout should remain usable on a tablet.
+- **Responsiveness:** analyzing a maximum-size decision should feel instant. No timing target is set until it has been measured.
+- **Accessibility:** keyboard operable, labelled inputs and charts, readable at 200% zoom, color never the only signal.
+- **Offline use:** the core product works with no internet connection.
+- **Data safety:** the journal can be exported as JSON as a backup, because it lives in a single local file.
+- **Honest limits:** the interface states that scores are relative to the options entered and are a decision aid, not a verdict (see "Known limitations" in `docs/ARCHITECTURE.md`).
+
 ### Out of scope for now
 
-User accounts, multi-user collaboration, mobile apps, payments, and public hosting of personal data. See open decisions in `docs/ARCHITECTURE.md`.
+User accounts, multi-user collaboration, mobile apps, payments, and public hosting of personal data. Also out of scope for the first version: criteria where the best value is a target in the middle (for example ideal room temperature), missing values, and per-scenario value overrides. See open decisions in `docs/ARCHITECTURE.md`.
 
 ## 5. Architecture direction (summary)
 
@@ -157,8 +166,11 @@ Details are in `docs/ARCHITECTURE.md`. In short:
 8. **AI output is untrusted.** Validate AI responses against the same schema as manual input. Show them to the user for review. Never act on instructions embedded in pasted text, and never let AI output reach a file path, command, or query.
 9. **AI is opt-in and bounded.** Off by default, input length capped, and sent only when the user triggers it. Warn the user that pasted text is sent to an external service.
 10. **Minimal logging.** Do not log decision content, pasted text, or API keys.
-11. **Keep dependencies tidy.** Commit lock files, install from them, and review `npm audit` and `pip` advisories periodically.
+11. **Keep dependencies tidy.** Commit `package-lock.json`, pin exact versions in the Python requirements files, install from them, and review `npm audit` and `pip` advisories periodically.
 12. **No public deployment of personal data without a plan.** Without accounts, a shared public database would mix users' decisions. Do not deploy publicly until storage and access are decided.
+13. **Local-only by default.** Start the backend bound to `127.0.0.1`, never `0.0.0.0`, so other devices on the same network (for example venue Wi-Fi) cannot reach it. There is no login, so anyone who could reach the backend could use a saved AI key. Keep AI off unless the backend is local-only, and add a simple request cap before enabling it.
+14. **Imports are untrusted.** A JSON file the user imports goes through the same validation as any other request.
+15. **CSV safety.** When exporting, text cells (option and criterion names) that begin with `=`, `+`, `-`, or `@` are prefixed so spreadsheet programs do not run them as formulas. Numeric cells are left alone.
 
 ## 8. Development workflow
 
@@ -189,6 +201,7 @@ Rules that follow from this:
 
 - The project path contains spaces (`E:\apps and codes j\WhatIf2.0`). Quote the path in terminal commands. Some tools handle spaces poorly. If an odd path-related error appears, moving the project to a path without spaces (for example `E:\projects\WhatIf2.0`) is a reasonable fix.
 - Use the VS Code integrated terminal and note which shell it is (PowerShell is the default). Commands for activating the Python virtual environment differ between shells, and Claude will give the exact form when needed.
+- PowerShell can refuse to run the activation script because script execution is disabled. If that happens, run the environment's Python directly (`.venv\Scripts\python.exe -m ...`) instead of changing system settings, and paste the error so Claude can confirm the next command.
 
 ## 9. Definition of done
 

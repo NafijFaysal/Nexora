@@ -68,7 +68,9 @@ Raw weights: price 4, quality 6 (rescaled to 0.4 and 0.6).
 **Derived expectations to test:**
 
 - **Scale invariance:** raw weights 40 and 60, or 2 and 3, must give the same result.
-- **Constraint:** `price <= 900` makes B ineligible. Scores stay A = 0.5 and C = 0.4 (normalization uses all entered options), so ranking is A first, C second, B listed as ineligible with the reason.
+- **Constraint:** `price <= 900` makes B ineligible, so the ranking is A first, C second, with B listed as ineligible and the reason shown. The exact scores depend on open decision 3 in `ARCHITECTURE.md` (normalization scope), so fill in whichever applies once it is decided:
+  - Normalizing over all entered options: A = 0.5 and C = 0.4 (unchanged from above).
+  - Normalizing over eligible options only (A and C): price ranges 600 to 800 and quality ranges 5 to 7, so A = 0.4 x 0 + 0.6 x 1 = 0.6 and C = 0.4 x 1 + 0.6 x 0 = 0.4.
 - **Tie:** with equal weights (0.5 each), every option scores 0.5, so all three tie at rank 1 and the result flags a tie.
 - **Sensitivity on the price weight `w`** (quality weight `1 - w`): A = 0.5 for every `w`, B = `1 - w`, C = `w`. The top option changes from B to C at `w = 0.5`. At exactly 0.5 all three tie. Option A never wins outright. This is a useful check that the switching-point calculation finds `0.5`.
 - **Contribution sums:** for every option, contributions add up to the score.
@@ -84,13 +86,14 @@ Raw weights: price 4, quality 6 (rescaled to 0.4 and 0.6).
 - Missing values, NaN, and infinity are rejected.
 - Constraints that refer to an unknown criterion are rejected.
 - Over-long names or notes are rejected.
+- Numbers beyond the allowed magnitude and weights beyond the allowed range are rejected.
 
 ### 4.2 Engine: normalization
 
 - Benefit and cost direction on the reference example.
 - All options equal on a criterion (the `max == min` case).
 - Negative values and decimals.
-- Very large and very small numbers do not break the calculation.
+- Very large and very small numbers within the allowed limits do not break the calculation.
 - The result for each option stays between 0 and 1.
 
 ### 4.3 Engine: scoring and ranking
@@ -116,6 +119,9 @@ Raw weights: price 4, quality 6 (rescaled to 0.4 and 0.6).
 - Simulation with the same seed gives identical results; a different seed may differ.
 - Simulation with 0% variation reproduces the base ranking in every run.
 - Simulation shares across options sum to 100%.
+- Ties for first in a simulation run split credit equally. For example, the equal-weights reference example with 0% variation gives each option one third.
+- Sweeping a criterion when every other weight is zero is reported as not defined, not as a crash or an invented result.
+- Requests above the simulation-run and sweep-step limits are rejected.
 
 ### 4.6 Engine: explanations
 
@@ -128,7 +134,7 @@ Raw weights: price 4, quality 6 (rescaled to 0.4 and 0.6).
 - `GET /api/health` returns success.
 - `POST /api/analyze` returns the expected result for the reference example.
 - Invalid payloads return a clear error and never a server crash.
-- Oversized payloads are rejected.
+- Oversized payloads and values beyond the limits (too many options, huge numbers) are rejected.
 - CORS allows the configured origin and rejects others.
 
 ### 4.8 Storage and journal
@@ -156,6 +162,8 @@ Raw weights: price 4, quality 6 (rescaled to 0.4 and 0.6).
 - Input forms: adding and removing options and criteria, validation messages.
 - Results view renders ranking, contributions, and ineligible reasons from a fixed sample result.
 - Export helpers produce correct JSON and CSV for a sample result, including values with commas and quotes.
+- CSV export neutralizes text cells that start with `=`, `+`, `-`, or `@`, and leaves numeric cells (including negative numbers) unchanged.
+- Importing a malformed JSON file shows a clear error and does not change the current decision.
 - Chart components render with and without data.
 
 ### 4.12 End-to-end (later, optional)
@@ -207,6 +215,8 @@ Run before any demo or release, and after major changes.
 - [ ] `git status` shows no `.env` or database file staged.
 - [ ] Search the repository for key-like strings before pushing anywhere.
 - [ ] With AI off, no network request to an AI provider is made.
+- [ ] Backend started on `127.0.0.1` only: opening it from another device on the same network (for example a phone on the same Wi-Fi) does not work.
+- [ ] Demo journal is reset before visitors arrive and contains no personal decisions.
 
 ## 6. When a test fails
 
