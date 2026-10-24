@@ -1,6 +1,8 @@
 # Testing Plan
 
-Status: **planned only**. No application code exists yet, no tests have been written, and no test has been run. Results are recorded in section 7 only after you run the tests and share the output.
+Status: **engine, API, and smoke tests written and passing (83 tests, section 7).** Test files exist in `backend/tests/engine/` for normalization, validation, scoring, ties, constraints, and explanations (the reference example in `docs/SCORING_MODEL.md` is encoded there). Sensitivity, API, storage, AI, and frontend tests are not written. Results are recorded in section 7 only after you run the tests and share the output.
+
+For the constraint case, the eligible-only figures (A = 0.6, C = 0.4) apply: decision D-002.
 
 ## 1. Approach
 
@@ -231,4 +233,6 @@ Fill this in only from real output you have run and shared.
 
 | Date | What was run | Result | Notes |
 |---|---|---|---|
-| (none yet) | | | |
+| 2026-10-25 | `python -m pytest` in `backend/` (engine, API, smoke tests), run by project owner via `scripts\setup-backend.cmd` | **83 passed, 1 warning in 0.69s** | Warning: Starlette says `httpx` with its TestClient is deprecated and suggests `httpx2`. Harmless for now; revisit when pinning dependencies. |
+| 2026-10-25 | `python -m ruff check .` in `backend/` | **All checks passed** | |
+| 2026-10-25 | Toolchain versions | Python 3.13.14, Git 2.56.0.windows.3, Node v24.22.1, npm 11.19.1 | Matches what the docs reported. |

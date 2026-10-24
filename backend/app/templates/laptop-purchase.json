@@ -1,0 +1,12 @@
+{
+  "id": "laptop-purchase",
+  "name": "Laptop purchase",
+  "description": "Compare laptops on a limited budget. Weights are suggestions; change them to match what you care about. You supply the values for each laptop.",
+  "illustrative": true,
+  "criteria": [
+    { "name": "Price", "direction": "cost", "weight": 5, "unit": "BDT" },
+    { "name": "Battery life", "direction": "benefit", "weight": 4, "unit": "hours" },
+    { "name": "Performance rating", "direction": "benefit", "weight": 4, "unit": "1-10" },
+    { "name": "Portability rating", "direction": "benefit", "weight": 2, "unit": "1-10" }
+  ]
+}

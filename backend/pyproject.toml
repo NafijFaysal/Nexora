@@ -1,0 +1,14 @@
+# Tool settings only. The backend is run from this folder and is not installed as a package.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Lets tests write `import app...` without installing the project. Paths are relative to this folder.
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+# E/F: basic errors, I: import order, B: likely bugs, UP: outdated syntax
+select = ["E", "F", "I", "B", "UP"]

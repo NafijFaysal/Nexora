@@ -4,107 +4,90 @@ Last updated: 2026-10-25
 
 **Status key**
 - **Written:** files exist but have not been run or confirmed by you.
-- **Verified:** you ran it and shared the real output (or the result is directly observable in the project folder).
+- **Verified:** you ran it and shared the real output (or the result is directly observable in the project folder or Git log).
+
+The short "state and exact next step" note is in `HANDOFF.md`.
 
 ## Current status
 
-Phase 0 (planning and documentation) is complete, apart from committing the review corrections made on 2026-10-25. No application code exists. No command has been run by Claude, no dependency installed, no application started, and no test executed.
+Phase 0 is complete. The Phase 1 setup files and a first version of the decision engine (roadmap Phases 2 and 3, minus the "Why not X?" comparison) plus the FastAPI backend are **verified by automated tests**: 83 tests pass and `ruff` reports no problems (run by you on 2026-10-25, recorded in `docs/TESTING.md`). Not yet verified: the server running in a browser, and anything about the frontend, which has not been started. The earlier "Written" labels in the tables below mean the same files, now covered by that test run.
 
 ## Completed work
 
 | Item | Status | Notes |
 |---|---|---|
-| Filesystem access to `E:\apps and codes j\WhatIf2.0` | Verified | `filesystem_test.txt` was written and read back through the filesystem integration. The file is kept for now, as requested. |
-| `PROJECT_GUIDE.md` | Written | Vision, users, principles, features, standards, security, workflow. Revised after the consistency review. |
-| `docs/ARCHITECTURE.md` | Written | Proposed design, data flow, trade-offs, open decisions. Revised after the review. |
-| `docs/TESTING.md` | Written | Test plan and a hand-calculated reference example. No tests exist yet. Revised after the review. |
-| `docs/progress.md` | Written | This file. |
-| `.gitignore` | Written | Python, Node.js, Next.js, env files, databases (including SQLite sidecar files), editor files. |
-| `.env.example` | Written | Placeholders only. |
-| Consistency review of the four documents | Written | Corrections listed in the session notes below. |
-| First Git commit | Verified | The Git log shows one commit on `main`: "Add project foundation and documentation". |
+| Filesystem access to `E:\apps and codes j\WhatIf2.0` | Verified | `filesystem_test.txt` was written and read back through the filesystem integration. Kept for now. |
+| `PROJECT_GUIDE.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`, `.gitignore`, `.env.example` | Written | Revised after the consistency review and again on 2026-10-25 to match the master specification. |
+| First commit: "Add project foundation and documentation" | Verified | Seen in the Git log. |
+| Second commit: "Refine documentation after consistency review" | Verified | Seen in the Git log. |
+| `backend/pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, `app/__init__.py`, `tests/test_smoke.py`, `README.md` | Written | Phase 1 step 1 files. Not run. |
+| `docs/SCORING_MODEL.md` | Written | Math and worked laptop example, calculated by hand. |
+| `docs/DECISIONS.md` | Written | D-001 to D-010. |
+| `CHANGELOG.md`, `HANDOFF.md` | Written | |
+| Engine: `models.py`, `validation.py`, `normalize.py`, `constraints.py`, `scoring.py`, `explain.py`, `__init__.py` | Written | Standard library only. Hard constraints, eligible-only normalization, stable tie handling, templated explanations. Not run. |
+| Engine tests: `tests/engine/test_normalize.py`, `test_validation.py`, `test_scoring.py`, `test_explain.py`, plus `tests/helpers.py` | Written | Expected numbers come from the hand calculation, including the constraint case (A = 0.6, C = 0.4), equal-weights tie, scale invariance, and the weight-driven ranking reversal. Not run. |
+
+## Added later in the same session (all Written, not run)
+
+| Item | Notes |
+|---|---|
+| `backend/app/main.py`, `config.py`, `api/schemas.py`, `api/converters.py`, `api/routes.py` | FastAPI app with `GET /api/health`, `POST /api/analyze`, `GET /api/templates`, `GET /api/templates/{id}`. Pydantic limits mirror the engine. CORS restricted to configured origins. 256 KB declared-size limit. |
+| `backend/app/templates/*.json` | Three illustrative templates (laptop, study priorities, project prioritization). Weights and criteria only. |
+| `backend/tests/api/test_api.py` | Reference example through the API, constraint reasons, 422 cases, size limit, CORS, templates. |
+| `requirements.txt`, `requirements-dev.txt` | fastapi, uvicorn, pytest, ruff, httpx. Unpinned until a real install works. |
+| `scripts/setup-backend.cmd`, `scripts/run-backend.cmd` | One-step setup, test and lint; start the server on 127.0.0.1. |
 
 ## Observations about the folder
 
-- The Git log has one commit. Claude did not check whether it includes the review corrections (it does not, since they were made afterwards) or `filesystem_test.txt`. If `filesystem_test.txt` was committed, remove it later with `git rm` once you decide it is no longer needed.
-- The project path contains spaces. Quote it in terminal commands. See `PROJECT_GUIDE.md`, section 8.
+- `filesystem_test.txt` is still present. If it was committed, remove it later with `git rm` once you decide it is no longer needed.
+- The project path contains spaces. Quote it in terminal commands.
+- Uncommitted: documentation edits and everything marked Written above since the second commit. Do not commit until pytest and ruff have been run.
 
 ## Blockers
 
-None. One decision is needed before Phase 3 (not before): normalization scope, open decision 3 in `docs/ARCHITECTURE.md`.
+None.
 
 ## Next exact action
 
-1. Commit the review corrections. From the project folder in the VS Code terminal, run `git status`, check that only the expected files are listed (`PROJECT_GUIDE.md`, `.gitignore`, `.env.example`, and the three files in `docs/`), and paste the output to Claude. If it looks right, then:
-   ```
-   git add .
-   git commit -m "Refine documentation after consistency review"
-   ```
-2. Tell Claude to start **Phase 1, step 1** (below).
-
-### Phase 1, step 1: toolchain check and backend skeleton
-
-Goal: prove the Python environment, `pytest`, and `ruff` work on your machine before any real code is written.
-
-Files Claude will create:
-
-| File | Purpose |
-|---|---|
-| `backend/pyproject.toml` | Settings for `pytest` (where tests live, how imports resolve) and `ruff` |
-| `backend/requirements.txt` | Runtime dependencies. Comment-only until Phase 4 |
-| `backend/requirements-dev.txt` | Development tools: `pytest` and `ruff` |
-| `backend/app/__init__.py` | Marks `app` as a Python package (empty) |
-| `backend/app/engine/__init__.py` | Marks `engine` as a package (empty) |
-| `backend/tests/test_smoke.py` | One small test that imports the engine package, proving the setup works |
-| `README.md` | Minimal setup instructions, extended in later phases |
-
-What you will run (Claude will give the exact commands with the files): version checks for Python, Node.js, npm, and Git; create the virtual environment in `backend`; install from `requirements-dev.txt`; run `pytest` and `ruff`; run `pip freeze` and paste everything back. Claude then pins exact versions from your real `pip freeze` output, rather than guessing them.
-
-Done when: you have pasted output showing the smoke test passing and `ruff` reporting no problems.
+Commit the verified work and scaffold the frontend (commands in `HANDOFF.md`).
 
 ## Implementation roadmap
 
-Each phase ends with working, tested software before the next begins. Phase 0 is complete. All other phases are **not started**.
+Each phase ends with working, tested software before the next begins. The decision-tree builder, soft preferences, and Science Fest evaluation plan from the master specification are placed in Phases 11 and 12 (D-001).
 
-| Phase | Goal | Done when |
+| Phase | Goal | Status |
 |---|---|---|
-| 0 | Planning and documentation | Docs reviewed and first commit made (review corrections still to be committed) |
-| 1 | Toolchain check, backend skeleton, minimal README | You have run the version checks, created the Python virtual environment, and a trivial `pytest` test passes with output shared |
-| 2 | Core engine: models, validation, normalization, weighted-sum scoring, ranking | The hand-calculated reference example passes as tests, with output shared |
-| 3 | Constraints, ties, explanation data, and "Why not X?" comparison. Normalization scope decided first | Constraint, tie, and explanation tests pass |
-| 4 | API: `/api/health` and `/api/analyze` | API tests pass and you can call the endpoint from the browser docs page |
-| 5 | Frontend skeleton and first vertical slice: input form, call API, show ranking, contribution chart, and normalized values | You can enter the laptop example in the browser and see B, A, C |
-| 6 | Sensitivity: weight sweep, switching points, then seeded rank-stability simulation | Reference switching point of 0.5 is found; charts display |
-| 7 | Scenarios (weights only) | Two scenarios can be compared side by side |
-| 8 | Templates | At least two templates load and validate |
-| 9 | Decision journal with SQLite and outcome reviews | Save, reload, and review work, with tests |
-| 10 | Exports: JSON, CSV, printable report | Round-trip import and export reproduces the same result |
-| 11 | Optional AI-assisted parsing (feature flag, fake-provider tests) | Disabled path and failure messages work; enabled path tested only if you decide to set up a key |
-| 12 | Polish, accessibility, final README, demo script, full manual checklist | Checklist in `docs/TESTING.md` completed with results recorded |
+| 0 | Planning and documentation | Done |
+| 1 | Toolchain check, backend skeleton, minimal README | **Verified** (tests and ruff pass; versions confirmed) |
+| 2 | Core engine: models, validation, normalization, weighted-sum scoring, ranking | **Verified** by automated tests against hand calculations |
+| 3 | Constraints, ties, explanation data, and "Why not X?" comparison | Constraints, ties, explanations written. "Why not X?" not started |
+| 4 | API: `/api/health` and `/api/analyze` (and templates endpoints) | **Verified** by API tests. Not yet tried by hand at http://127.0.0.1:8000/docs |
+| 5 | Frontend skeleton and first vertical slice: input form, call API, ranking, contribution chart, normalized values | Not started |
+| 6 | Sensitivity: weight sweep, switching points, seeded rank-stability simulation | Not started |
+| 7 | Scenarios (weights, values, thresholds, option availability) | Not started |
+| 8 | Templates | Three written (backend only), no UI yet |
+| 9 | Decision journal with SQLite and outcome reviews | Not started |
+| 10 | Exports: JSON, CSV (formula-safe), printable report | Not started |
+| 11 | Optional AI-assisted parsing (provider-independent, fake-provider tests) and decision tree builder | Not started |
+| 12 | Polish, accessibility, soft preferences, final README, demo script, Science Fest evaluation plan, full manual checklist | Not started |
 
 ## Decisions log
+
+Full reasoning is in `docs/DECISIONS.md`.
 
 | Date | Decision | Status |
 |---|---|---|
 | 2026-10-25 | Documentation first, before any application code | Agreed |
 | 2026-10-25 | Keep `filesystem_test.txt` for now | Agreed |
-| 2026-10-25 | Proposed stack: Next.js frontend, FastAPI backend, SQLite, local run for the demo | Proposed, awaiting your confirmation |
-| 2026-10-25 | Journal storage through built-in `sqlite3` rather than an ORM | Proposed, confirm at Phase 9 |
-| 2026-10-25 | Scenarios override weights only in the first version | Proposed |
-| 2026-10-25 | Normalization scope (all options or eligible options only) | Open, decide before Phase 3 |
+| 2026-10-25 | Stack: Next.js, FastAPI, SQLite, local run for the demo | Specified by master prompt |
+| 2026-10-25 | D-002: normalize over eligible options only | Decided |
+| 2026-10-25 | D-003: scenarios may override weights, values, thresholds, availability | Decided |
+| 2026-10-25 | D-005: missing values rejected | Decided |
+| 2026-10-25 | D-006: engine uses only the standard library | Decided |
+| 2026-10-25 | Journal storage through built-in `sqlite3` | Proposed, confirm at Phase 9 |
+| 2026-10-25 | Tailwind and Recharts | Confirm at Phase 5 |
 
 ## Session notes
 
-- 2026-10-25: Created the planning documents and configuration files listed above. The first draft dated its entries 2026-10-24; the Git log shows work happening on 2026-10-25 in your timezone, so dates were corrected.
-- 2026-10-25: Consistency review. Corrections made:
-  - Scenarios now consistently mean weight overrides only.
-  - Added non-functional requirements, qualitative-rating guidance, and first-version exclusions (target-value criteria, missing values).
-  - Added "Known limitations" (relative scores, rank reversal, outliers, linear trade-offs).
-  - Tightened limits: numeric magnitude, weight range, simulation runs, sweep steps, and a note that body size is not enforced by default.
-  - Defined edge cases: simulation tie credit, sensitivity when all other weights are zero.
-  - Security rules added: localhost-only backend, untrusted imports, CSV formula safety, pinned Python versions.
-  - Demo privacy: reset the journal between visitors.
-  - Replaced SQLAlchemy with built-in `sqlite3` as the proposal, and changed `DATABASE_URL` to `DATABASE_PATH` to match.
-  - `.gitignore` now covers SQLite journal, WAL, and shm files.
-  - Recorded normalization scope as an open decision, with both sets of expected numbers in `docs/TESTING.md`.
-  - Roadmap: README starts in Phase 1, "Why not X?" assigned to Phase 3.
+- 2026-10-25 (earlier): Created the planning documents and configuration files, then the consistency review and Phase 1 step 1 files.
+- 2026-10-25 (this session): Inspected the folder against the master specification. Resolved conflicts (scenario scope, decision-tree builder, soft preferences, AI provider, missing handoff, decisions, and changelog files, normalization scope). Wrote the scoring model document, the engine, and the engine tests. Nothing was run.

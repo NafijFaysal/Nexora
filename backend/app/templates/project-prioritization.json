@@ -1,0 +1,12 @@
+{
+  "id": "project-prioritization",
+  "name": "Project prioritization",
+  "description": "Rank candidate projects for a small team with limited people and time. Ratings use a 1-10 scale you define.",
+  "illustrative": true,
+  "criteria": [
+    { "name": "Expected benefit", "direction": "benefit", "weight": 5, "unit": "1-10" },
+    { "name": "Effort", "direction": "cost", "weight": 4, "unit": "person-days" },
+    { "name": "Cost", "direction": "cost", "weight": 3, "unit": "BDT" },
+    { "name": "Risk rating", "direction": "cost", "weight": 3, "unit": "1-10" }
+  ]
+}

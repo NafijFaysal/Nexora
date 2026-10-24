@@ -1,0 +1,10 @@
+# Runtime dependencies for the backend.
+#
+# Direct dependencies are pinned to the versions installed in the working virtual
+# environment (read from .venv on 2026-10-25). Their own dependencies (pydantic, starlette,
+# and so on) are not pinned; add a lock file later if exact reproducibility of those matters.
+#
+# fastapi:  web framework and request validation (pulls in pydantic)
+# uvicorn:  the server that runs the FastAPI app
+fastapi==0.162.0
+uvicorn==0.54.0

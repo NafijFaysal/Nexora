@@ -5,6 +5,9 @@ This is the reference document for the project. Read it before starting any work
 - `docs/ARCHITECTURE.md`: how the system is structured
 - `docs/TESTING.md`: what is tested and how to verify it
 - `docs/progress.md`: what is done, what is next
+- `docs/DECISIONS.md`: important decisions and the reasons for them
+- `docs/SCORING_MODEL.md`: the scoring mathematics with a worked example
+- `HANDOFF.md`: the single authoritative note on current state and the exact next step
 
 ## 1. Product vision
 
@@ -58,7 +61,7 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 - **Decision model:** options, criteria, weights, and numeric values for each option on each criterion. Qualitative factors (for example "comfort") are entered as numeric ratings on a scale the user chooses, such as 1 to 10, and the interface explains this.
 - **Criterion direction:** each criterion is either "higher is better" (benefit) or "lower is better" (cost).
 - **Scoring:** weighted-sum model with min-max normalization (first method). Further methods (for example TOPSIS) may be added later behind a clear explanation of how they differ.
-- **Constraints:** hard limits that mark an option as not allowed (for example "price must be at most 900"), with the reason shown for each excluded option.
+- **Constraints:** hard limits that mark an option as not allowed (for example "price must be at most 900"), with the reason shown for each excluded option. Soft preferences (nice-to-have limits) come later, are shown separately, and never remove an option (D-007).
 - **Ranking:** ordered results with explicit tie handling.
 
 ### Explainability and visualization
@@ -70,7 +73,7 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 
 ### Scenario and sensitivity analysis
 
-- **Scenarios:** named sets of weights (for example "budget-focused" and "quality-focused") compared side by side. Overriding option values per scenario is not planned for the first version.
+- **Scenarios:** a scenario is a named copy of the decision with overrides (weights, individual values such as a higher cost, a tighter budget threshold, or an option marked unavailable), compared side by side with the original, which is never modified. The comparison highlights ranking reversals and which assumptions changed (decision D-003 in `docs/DECISIONS.md`).
 - **One-at-a-time sensitivity:** sweep one weight while rescaling the others, and chart the scores.
 - **Switching points:** the weight value at which the top-ranked option changes.
 - **Rank stability:** repeatedly sample plausible weights (seeded) and report how often each option ranks first.
@@ -90,7 +93,12 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 
 - The user pastes free text such as "I'm choosing between three laptops, I care most about battery and price".
 - The AI proposes structured options, criteria, and weights. The user reviews and edits before analysis.
-- Disabled by default. Feature-flagged. Never required.
+- Disabled by default. Feature-flagged. Never required. Provider-independent interface; a provider is chosen only after checking current official documentation and pricing (D-008).
+
+### Decision tree builder (late, optional)
+
+- A starting node with user-defined branches and outcomes, editable labels, basic structural validation, a readable diagram, and save and reopen.
+- No expected values or probabilities unless the user supplies probability estimates and the calculation is defined and tested. Otherwise it is a structuring tool only.
 
 ### Exports
 
@@ -109,7 +117,7 @@ Each item is a plan, not a promise. Status is tracked in `docs/progress.md`.
 
 ### Out of scope for now
 
-User accounts, multi-user collaboration, mobile apps, payments, and public hosting of personal data. Also out of scope for the first version: criteria where the best value is a target in the middle (for example ideal room temperature), missing values, and per-scenario value overrides. See open decisions in `docs/ARCHITECTURE.md`.
+User accounts, multi-user collaboration, mobile apps, payments, and public hosting of personal data. Also out of scope for the first version: criteria where the best value is a target in the middle (for example ideal room temperature), and missing values. See open decisions in `docs/ARCHITECTURE.md`.
 
 ## 5. Architecture direction (summary)
 

@@ -1,0 +1,12 @@
+{
+  "id": "study-priorities",
+  "name": "Study task prioritization",
+  "description": "Choose which task to do first when time is limited. Rate importance and urgency on a 1-10 scale you define, and enter the time each task needs.",
+  "illustrative": true,
+  "criteria": [
+    { "name": "Importance", "direction": "benefit", "weight": 5, "unit": "1-10" },
+    { "name": "Urgency", "direction": "benefit", "weight": 5, "unit": "1-10" },
+    { "name": "Time needed", "direction": "cost", "weight": 3, "unit": "hours" },
+    { "name": "Effect on grade", "direction": "benefit", "weight": 4, "unit": "1-10" }
+  ]
+}

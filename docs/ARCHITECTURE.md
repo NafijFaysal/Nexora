@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **proposed**. Nothing here has been built or run yet. Choices marked "confirm at scaffolding" are expected to be finalized when that part is first set up.
+Status: **proposed**, except the engine (`backend/app/engine/`), which is written but not yet run. See `docs/SCORING_MODEL.md` and `docs/DECISIONS.md`. Choices marked "confirm at scaffolding" are expected to be finalized when that part is first set up.
 
 ## 1. Goals that shaped the design
 
@@ -121,7 +121,7 @@ JSON and CSV exports are produced in the browser from the data already on screen
 - `criteria`: each has a name, a direction (`benefit` or `cost`), a raw importance weight, and an optional unit.
 - `values`: one number per option per criterion. Qualitative factors are entered as numeric ratings on a user-chosen scale. Missing values are rejected in the first version.
 - `constraints`: each refers to one criterion with `<=` or `>=` and a threshold on the raw value.
-- `scenarios` (later): named overrides of weights.
+- `scenarios` (later): named copies of the model with overrides of weights, values, constraint thresholds, or option availability (D-003). The engine stays stateless.
 - `schema_version`: so saved decisions can be migrated when the model changes.
 
 ### Calculations
@@ -202,7 +202,7 @@ Initial values, adjustable after testing:
 | Languages | Python backend, TypeScript frontend | Everything in TypeScript | The brief names both stacks, and a Python engine is easy to unit test. Cost: two runtimes, two sets of tools, more to learn. A TypeScript-only app would be simpler to deploy. Keeping the engine free of web code makes a later port feasible. |
 | Where math runs | Backend only | Duplicate in browser | One source of truth for numbers. Cost: the UI needs the backend running, even for simple analysis. |
 | Scoring method | Weighted sum first | TOPSIS, AHP, outranking methods | Easiest to explain to a first-time user. Cost: assumes criteria trade off linearly. More methods can be added after the first is solid. |
-| Normalization | Open (decision 3): min-max over all entered options, or over eligible options only | The other one | Over all options: scores do not shift when a constraint is toggled, but a ruled-out option still stretches the scale. Over eligible options: a ruled-out option behaves as if it was never entered, which is easier to explain, but scores change when a constraint is toggled. Decide before Phase 3. |
+| Normalization | Decided (D-002): min-max over eligible options only | The other one | Over all options: scores do not shift when a constraint is toggled, but a ruled-out option still stretches the scale. Over eligible options: a ruled-out option behaves as if it was never entered, which is easier to explain, but scores change when a constraint is toggled. |
 | Database | SQLite via built-in `sqlite3` | PostgreSQL, a hosted service, or SQLite with an ORM | Zero cost, zero setup, no extra dependency. Cost: not suited to many simultaneous users, and hand-written queries need care (parameters only). |
 | Accounts | None in v1 | Login system | Large security and maintenance burden for a demo. Cost: no public multi-user hosting (see open decisions). |
 | Explanations | Templated from numbers | AI-written | Reproducible, testable, free. Cost: less fluent prose. |
@@ -215,7 +215,7 @@ Initial values, adjustable after testing:
 
 1. **Public hosting and storage.** If the app is ever hosted for many people, how is the journal kept private? Options include per-browser storage, accounts, or no journal on the public version.
 2. **Project path.** Keep `E:\apps and codes j\WhatIf2.0` (spaces in the path) or move to a path without spaces if tools misbehave.
-3. **Normalization scope (decide before Phase 3).** Normalize over all entered options, or only over options that pass the constraints? The expected numbers in `docs/TESTING.md` section 3 depend on the answer. Current lean: eligible options only, because a ruled-out option then behaves as if it was never entered.
+3. **Normalization scope: resolved (D-002).** Eligible options only. The expected numbers for this case are in `docs/SCORING_MODEL.md` section 3. Toggling a constraint changes the scores of the remaining options, and the product must say so.
 4. **Styling.** Confirm Tailwind versus plain CSS at frontend scaffolding.
 5. **AI in the demo.** Whether to include AI parsing at all, which provider, and who pays for API usage. API usage is billed separately from a Claude chat plan; check current pricing before deciding.
 6. **Tie tolerance and simulation defaults.** Settle after testing.
