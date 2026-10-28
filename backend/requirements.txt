@@ -8,3 +8,5 @@
 # uvicorn:  the server that runs the FastAPI app
 fastapi==0.162.0
 uvicorn==0.54.0
+python-dotenv==1.2.4
+google-genai==2.33.0

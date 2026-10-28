@@ -71,6 +71,49 @@ class AnalysisOut(BaseModel):
     method: str
 
 
+class AIChatMessage(_Strict):
+    role: Annotated[str, StringConstraints(min_length=1, max_length=32)]
+    content: Annotated[str, StringConstraints(max_length=MAX_NOTE_LENGTH)]
+
+
+class AICriterionDraft(_Strict):
+    name: Name
+    direction: Direction
+    weight: float | None = None
+    unit: Annotated[str, StringConstraints(max_length=MAX_NAME_LENGTH)] = ""
+
+
+class AIConstraintDraft(_Strict):
+    criterion: Name
+    operator: Operator
+    threshold: RawNumber
+
+
+class AIDecisionDraft(_Strict):
+    title: Annotated[str, StringConstraints(max_length=MAX_NAME_LENGTH)] = ""
+    description: Annotated[str, StringConstraints(max_length=MAX_NOTE_LENGTH)] = ""
+    options: Annotated[list[Name], Field(min_length=2, max_length=MAX_OPTIONS)] = []
+    criteria: Annotated[list[AICriterionDraft], Field(min_length=1, max_length=MAX_CRITERIA)] = []
+    values: dict[Name, dict[Name, RawNumber | None]] = {}
+    constraints: Annotated[list[AIConstraintDraft], Field(max_length=MAX_CONSTRAINTS)] = []
+    unknowns: Annotated[list[str], Field(max_length=MAX_OPTIONS)] = []
+    notes: Annotated[str, StringConstraints(max_length=MAX_NOTE_LENGTH)] = ""
+
+
+class AIChatRequest(_Strict):
+    messages: Annotated[list[AIChatMessage], Field(min_length=1, max_length=20)]
+    draft: AIDecisionDraft | None = None
+
+
+class AIChatResponse(_Strict):
+    available: bool
+    message: str
+    draft: AIDecisionDraft | None = None
+    warnings: list[str] = []
+    follow_up_questions: list[str] = []
+    unknown_fields: list[str] = []
+
+
 class TemplateOut(_Strict):
     id: Annotated[str, StringConstraints(pattern=r"^[a-z0-9-]{1,50}$")]
     name: Name
